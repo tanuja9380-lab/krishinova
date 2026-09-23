@@ -1,0 +1,95 @@
+{
+  "supported_crops": [
+    {
+      "id": "onion",
+      "name": "Onion",
+      "season": "Rabi",
+      "duration_days": 120,
+      "water_requirement": "moderate",
+      "temperature_range": {
+        "min": 13,
+        "max": 24
+      },
+      "soil_type": [
+        "loamy",
+        "sandy loam"
+      ]
+    },
+    {
+      "id": "ragi",
+      "name": "Ragi (Finger Millet)",
+      "season": "Kharif",
+      "duration_days": 100,
+      "water_requirement": "low",
+      "temperature_range": {
+        "min": 20,
+        "max": 30
+      },
+      "soil_type": [
+        "red",
+        "laterite",
+        "loamy"
+      ]
+    },
+    {
+      "id": "rice",
+      "name": "Rice",
+      "season": "Kharif",
+      "duration_days": 150,
+      "water_requirement": "high",
+      "temperature_range": {
+        "min": 20,
+        "max": 35
+      },
+      "soil_type": [
+        "clayey",
+        "loamy"
+      ]
+    },
+    {
+      "id": "tomato",
+      "name": "Tomato",
+      "season": "All",
+      "duration_days": 90,
+      "water_requirement": "moderate",
+      "temperature_range": {
+        "min": 18,
+        "max": 27
+      },
+      "soil_type": [
+        "sandy loam",
+        "loamy"
+      ]
+    },
+    {
+      "id": "sugarcane",
+      "name": "Sugarcane",
+      "season": "All",
+      "duration_days": 365,
+      "water_requirement": "very high",
+      "temperature_range": {
+        "min": 21,
+        "max": 35
+      },
+      "soil_type": [
+        "loamy",
+        "clayey loam"
+      ]
+    },
+    {
+      "id": "maize",
+      "name": "Maize",
+      "season": "Kharif",
+      "duration_days": 110,
+      "water_requirement": "moderate",
+      "temperature_range": {
+        "min": 21,
+        "max": 32
+      },
+      "soil_type": [
+        "loamy",
+        "sandy loam"
+      ]
+    }
+  ]
+}

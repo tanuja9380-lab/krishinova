@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>KrishiNova - Farmer Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f8f1;
+            margin: 0;
+            padding: 0;
+            color: #1f3b24;
+        }
+
+        .header {
+            background: #2e7d32;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .header p {
+            margin-top: 8px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 14px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #256628;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .weather-box {
+            background: #eef7ed;
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .weather-box strong {
+            display: block;
+            font-size: 22px;
+            margin-top: 5px;
+        }
+
+        .risk-box {
+            padding: 20px;
+            border-radius: 10px;
+            background: #fff3cd;
+        }
+
+        .risk-score {
+            font-size: 35px;
+            font-weight: bold;
+        }
+
+        .risk-level {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        ul {
+            line-height: 1.8;
+        }
+
+        .loading {
+            text-align: center;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .error {
+            color: #b00020;
+            font-weight: bold;
+        }
+
+        @media (max-width: 700px) {
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                margin: 10px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>🌾 KrishiNova</h1>
+        <p>AI-Assisted Post-Harvest Loss Prevention</p>
+    </div>
+
+    <div class="container">
+
+        <!-- FARMER INPUT -->
+        <div class="card">
+
+            <h2>🌱 Crop Analysis</h2>
+
+            <label for="name">Farmer Name</label>
+            <input
+                id="name"
+                type="text"
+                placeholder="Enter farmer name"
+            >
+
+            <label for="crop">Crop</label>
+            <input
+                id="crop"
+                type="text"
+                placeholder="Example: rice"
+            >
+
+            <label for="location">Location</label>
+            <input
+                id="location"
+                type="text"
+                placeholder="Example: Bengaluru"
+            >
+
+            <label for="quantity">Quantity (kg)</label>
+            <input
+                id="quantity"
+                type="number"
+                placeholder="Example: 500"
+                min="1"
+            >
+
+            <label for="storage">Storage Available</label>
+            <input
+                id="storage"
+                type="text"
+                placeholder="Example: Open outdoor storage"
+            >
+
+            <button onclick="analyzeCrop()">
+                🔍 Analyze Crop
+            </button>
+
+            <p id="message"></p>
+
+        </div>
+
+
+        <!-- ANALYSIS RESULT -->
+
+        <div id="result" class="result">
+
+            <!-- WEATHER -->
+
+            <div class="card">
+
+                <h2>🌦 Weather Conditions</h2>
+
+                <div class="weather-grid">
+
+                    <div class="weather-box">
+                        Temperature
+                        <strong id="temperature">-</strong>
+                    </div>
+
+                    <div class="weather-box">
+                        Humidity
+                        <strong id="humidity">-</strong>
+                    </div>
+
+                    <div class="weather-box">
+                        Rain Probability
+                        <strong id="rainProbability">-</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RISK -->
+
+            <div class="card">
+
+                <h2>⚠️ Post-Harvest Risk</h2>
+
+                <div class="risk-box">
+
+                    <div>
+                        Risk Score:
+                        <span id="riskScore" class="risk-score">
+                            -
+                        </span>
+                    </div>
+
+                    <div>
+                        Risk Level:
+                        <span id="riskLevel" class="risk-level">
+                            -
+                        </span>
+                    </div>
+
+                    <h3>Risk Factors</h3>
+
+                    <ul id="riskFactors"></ul>
+
+                </div>
+
+            </div>
+
+
+            <!-- STORAGE -->
+
+            <div class="card">
+
+                <h2>🏠 Recommended Storage</h2>
+
+                <p id="recommendedStorage"></p>
+
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="card">
+
+                <h2>📋 Recommended Actions</h2>
+
+                <ul id="recommendedActions"></ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        async function analyzeCrop() {
+
+            const name =
+                document.getElementById("name").value.trim();
+
+            const crop =
+                document.getElementById("crop").value.trim();
+
+            const location =
+                document.getElementById("location").value.trim();
+
+            const quantity =
+                Number(document.getElementById("quantity").value);
+
+            const storage =
+                document.getElementById("storage").value.trim();
+
+            const message =
+                document.getElementById("message");
+
+            const result =
+                document.getElementById("result");
+
+
+            // Basic validation
+
+            if (!name || !crop || !location || !quantity) {
+
+                message.innerText =
+                    "Please fill all required fields.";
+
+                message.className = "error";
+
+                return;
+            }
+
+
+            message.innerText =
+                "Analyzing crop and checking weather...";
+
+            message.className = "loading";
+
+            result.style.display = "none";
+
+
+            try {
+
+                // 1. Save farmer details to PostgreSQL
+const farmerResponse = await fetch(
+    "http://127.0.0.1:8000/farmers",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            crop: crop,
+            location: location,
+            quantity_kg: quantity,
+            storage_available: storage
+        })
+    }
+);
+
+const farmerData = await farmerResponse.json();
+
+if (!farmerResponse.ok) {
+    throw new Error(
+        farmerData.detail
+            ? JSON.stringify(farmerData.detail)
+            : "Failed to save farmer"
+    );
+}
+
+// 2. Run crop analysis
+const response = await fetch(
+    "http://127.0.0.1:8000/analysis",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            crop: crop,
+            location: location,
+            quantity_kg: quantity,
+            storage_available: storage
+        })
+    }
+);
+
+const data = await response.json();
+
+if (!response.ok) {
+    throw new Error(
+        data.detail
+            ? JSON.stringify(data.detail)
+            : "Analysis failed"
+    );
+}
+
+
+
+                // WEATHER
+
+                document.getElementById("temperature")
+                    .innerText =
+                    data.weather.temperature_c + " °C";
+
+
+                document.getElementById("humidity")
+                    .innerText =
+                    data.weather.humidity_percent + " %";
+
+
+                document.getElementById("rainProbability")
+                    .innerText =
+                    data.weather.rain_probability_percent + " %";
+
+
+                // RISK
+
+                document.getElementById("riskScore")
+                    .innerText =
+                    data.risk.score;
+
+
+                document.getElementById("riskLevel")
+                    .innerText =
+                    data.risk.level;
+
+
+                // RISK FACTORS
+
+                const riskFactors =
+                    document.getElementById("riskFactors");
+
+                riskFactors.innerHTML = "";
+
+
+                data.risk.factors.forEach(
+                    function(factor) {
+
+                        const li =
+                            document.createElement("li");
+
+                        li.innerText = factor;
+
+                        riskFactors.appendChild(li);
+
+                    }
+                );
+
+
+                // STORAGE
+
+                document.getElementById(
+                    "recommendedStorage"
+                ).innerText =
+                    data.recommended_storage;
+
+
+                // ACTIONS
+
+                const actions =
+                    document.getElementById(
+                        "recommendedActions"
+                    );
+
+                actions.innerHTML = "";
+
+
+                data.recommended_actions.forEach(
+                    function(action) {
+
+                        const li =
+                            document.createElement("li");
+
+                        li.innerText = action;
+
+                        actions.appendChild(li);
+
+                    }
+                );
+
+
+                // SHOW RESULTS
+
+                result.style.display = "block";
+
+                message.innerText =
+                    "Analysis completed successfully.";
+
+                message.className = "";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                message.innerText =
+                    "Error: " + error.message;
+
+                message.className = "error";
+
+            }
+
+        }
+
+    </script>
+
+</body>
+</html>
