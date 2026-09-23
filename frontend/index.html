@@ -348,7 +348,7 @@
 
                 // 1. Save farmer details to PostgreSQL
 const farmerResponse = await fetch(
-    "https://krishinova-backend.onrender.com/",
+    "https://krishinova-backend.onrender.com/farmers",
     {
         method: "POST",
         headers: {
@@ -376,7 +376,7 @@ if (!farmerResponse.ok) {
 
 // 2. Run crop analysis
 const response = await fetch(
-    "https://krishinova-backend.onrender.com/",
+    "https://krishinova-backend.onrender.com/analysis",
     {
         method: "POST",
         headers: {
