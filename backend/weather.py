@@ -50,29 +50,36 @@ def get_weather(location: str):
 
     coordinates = get_coordinates(location)
 
-    response = requests.get(
-        WEATHER_URL,
-        params={
-            "latitude": coordinates["latitude"],
-            "longitude": coordinates["longitude"],
+    params = {
+        "latitude": coordinates["latitude"],
+        "longitude": coordinates["longitude"],
+        "current": (
+            "temperature_2m,"
+            "relative_humidity_2m,"
+            "precipitation,"
+            "rain"
+        ),
+        "daily": "precipitation_probability_max",
+        "forecast_days": 3,
+        "timezone": "auto"
+    }
 
-            "current": (
-                "temperature_2m,"
-                "relative_humidity_2m,"
-                "precipitation,"
-                "rain"
-            ),
+    try:
+        response = requests.get(
+            WEATHER_URL,
+            params=params,
+            timeout=10
+        )
 
-            "daily": "precipitation_probability_max",
+        response.raise_for_status()
 
-            "forecast_days": 3,
-
-            "timezone": "auto"
-        },
-        timeout=10
-    )
-
-    response.raise_for_status()
+    except requests.exceptions.HTTPError as error:
+        if response.status_code == 429:
+            raise RuntimeError(
+                "Weather service is temporarily rate-limited. "
+                "Please try again in a few seconds."
+            ) from error
+        raise
 
     data = response.json()
 
@@ -102,22 +109,10 @@ def get_weather(location: str):
         "country": coordinates["country"],
         "latitude": coordinates["latitude"],
         "longitude": coordinates["longitude"],
-
-        "temperature_c": current.get(
-            "temperature_2m"
-        ),
-
-        "humidity_percent": current.get(
-            "relative_humidity_2m"
-        ),
-
-        "precipitation_mm": current.get(
-            "precipitation"
-        ),
-
+        "temperature_c": current.get("temperature_2m"),
+        "humidity_percent": current.get("relative_humidity_2m"),
+        "precipitation_mm": current.get("precipitation"),
         "rain_mm": current_rain,
-
         "rain_probability_percent": rain_probability,
-
         "rainfall_expected": rainfall_expected
     }
