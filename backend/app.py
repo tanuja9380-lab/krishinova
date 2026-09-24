@@ -2,15 +2,19 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+
 from weather import get_weather
 from database import get_connection
 from crop_data import CROP_DATA
+
 
 app = FastAPI(
     title="KrishiNova API",
     description="AI-assisted post-harvest crop loss prevention system",
     version="1.0.0"
 )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,13 +22,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# ---------------------------------------------------------
-# TEMPORARY IN-MEMORY FARMER STORAGE
-# ---------------------------------------------------------
-# We will replace this with PostgreSQL later.
-
 
 
 # ---------------------------------------------------------
@@ -55,6 +52,7 @@ class CropAnalysisRequest(BaseModel):
 
 CROP_RULES = CROP_DATA
 
+
 # ---------------------------------------------------------
 # HOME
 # ---------------------------------------------------------
@@ -74,6 +72,7 @@ def home():
 
 @app.post("/farmers")
 def add_farmer(farmer: FarmerCreate):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -94,6 +93,7 @@ def add_farmer(farmer: FarmerCreate):
     )
 
     row = cursor.fetchone()
+
     conn.commit()
 
     cursor.close()
@@ -111,7 +111,6 @@ def add_farmer(farmer: FarmerCreate):
         }
     }
 
-   
 
 # ---------------------------------------------------------
 # GET FARMERS
@@ -119,12 +118,20 @@ def add_farmer(farmer: FarmerCreate):
 
 @app.get("/farmers")
 def get_farmers():
+
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        SELECT id, name, crop, location, quantity_kg, storage_available, created_at
+        SELECT
+            id,
+            name,
+            crop,
+            location,
+            quantity_kg,
+            storage_available,
+            created_at
         FROM farmers
         ORDER BY id DESC
         """
@@ -153,7 +160,7 @@ def get_farmers():
 # POST-HARVEST ANALYSIS
 # ---------------------------------------------------------
 
-@app.post("/analysis") 
+@app.post("/analysis")
 def crop_analysis(request: CropAnalysisRequest):
 
     crop = request.crop.strip().lower()
@@ -177,74 +184,105 @@ def crop_analysis(request: CropAnalysisRequest):
     # GET REAL WEATHER
     # ---------------------------------------------------------
 
-try:
-    weather_data = get_weather(request.location)
-    weather_available = True
+    try:
 
-except ValueError as error:
-    raise HTTPException(
-        status_code=404,
-        detail=str(error)
-    )
+        weather_data = get_weather(request.location)
+        weather_available = True
 
-except Exception:
-    weather_available = False
+    except ValueError as error:
 
-    # Use farmer-provided weather values if available.
-    # Otherwise continue analysis without live weather.
-    weather_data = {
-        "location": request.location,
-        "country": None,
-        "latitude": None,
-        "longitude": None,
-        "temperature_c": request.temperature_c,
-        "humidity_percent": request.humidity_percent,
-        "precipitation_mm": None,
-        "rain_mm": None,
-        "rain_probability_percent": None,
-        "rainfall_expected": (
-            request.rainfall_expected
-            if request.rainfall_expected is not None
-            else False
+        raise HTTPException(
+            status_code=404,
+            detail=str(error)
         )
-    }
+
+    except Exception:
+
+        # Weather service may be temporarily unavailable
+        # or rate-limited.
+        #
+        # KrishiNova should still perform crop analysis
+        # instead of completely failing.
+
+        weather_available = False
+
+        weather_data = {
+            "location": request.location,
+            "country": None,
+            "latitude": None,
+            "longitude": None,
+
+            "temperature_c": request.temperature_c,
+
+            "humidity_percent": request.humidity_percent,
+
+            "precipitation_mm": None,
+
+            "rain_mm": None,
+
+            "rain_probability_percent": None,
+
+            "rainfall_expected": (
+                request.rainfall_expected
+                if request.rainfall_expected is not None
+                else False
+            )
+        }
 
     # ---------------------------------------------------------
-    # USE REAL WEATHER VALUES
+    # WEATHER VALUES
     # ---------------------------------------------------------
 
     temperature = weather_data["temperature_c"]
+
     humidity = weather_data["humidity_percent"]
+
     rainfall_expected = weather_data["rainfall_expected"]
+
 
     # ---------------------------------------------------------
     # RISK CALCULATION
     # ---------------------------------------------------------
 
     risk_score = 0
+
     risk_factors = []
 
-    # Temperature
+
+    # ---------------------------------------------------------
+    # TEMPERATURE
+    # ---------------------------------------------------------
+
     if temperature is not None:
 
         if temperature >= rules["high_risk_temperature"]:
+
             risk_score += 2
 
             risk_factors.append(
                 f"High temperature ({temperature}°C)"
             )
 
-    # Humidity
+
+    # ---------------------------------------------------------
+    # HUMIDITY
+    # ---------------------------------------------------------
+
     if humidity is not None:
 
         if humidity >= rules["high_risk_humidity"]:
+
             risk_score += 2
 
             risk_factors.append(
                 f"High humidity ({humidity}%)"
             )
 
-    # Rain
+
+    # ---------------------------------------------------------
+    # RAIN
+    # ---------------------------------------------------------
+
     if rainfall_expected:
 
         risk_score += 2
@@ -253,7 +291,11 @@ except Exception:
             "Rainfall expected"
         )
 
-    # Storage
+
+    # ---------------------------------------------------------
+    # STORAGE
+    # ---------------------------------------------------------
+
     if request.storage_available:
 
         storage = request.storage_available.lower()
@@ -266,18 +308,23 @@ except Exception:
                 "Produce is exposed to outdoor conditions"
             )
 
+
     # ---------------------------------------------------------
     # RISK LEVEL
     # ---------------------------------------------------------
 
     if risk_score >= 5:
+
         risk_level = "HIGH"
 
     elif risk_score >= 3:
+
         risk_level = "MEDIUM"
 
     else:
+
         risk_level = "LOW"
+
 
     # ---------------------------------------------------------
     # FINAL RESPONSE
@@ -307,6 +354,8 @@ except Exception:
 
         "weather": {
 
+            "available": weather_available,
+
             "temperature_c": temperature,
 
             "humidity_percent": humidity,
@@ -326,25 +375,40 @@ except Exception:
             "rainfall_expected": rainfall_expected
         }
     }
+
+
+# ---------------------------------------------------------
+# SUPPORTED CROPS
+# ---------------------------------------------------------
+
 @app.get("/crops")
 def get_supported_crops():
 
     return {
         "supported_crops": list(CROP_RULES.keys())
     }
+
+
+# ---------------------------------------------------------
+# WEATHER
+# ---------------------------------------------------------
+
 @app.get("/weather")
 def weather(location: str):
 
     try:
+
         return get_weather(location)
 
     except ValueError as error:
+
         raise HTTPException(
             status_code=404,
             detail=str(error)
         )
 
     except Exception as error:
+
         raise HTTPException(
             status_code=502,
             detail=f"Weather service error: {str(error)}"
