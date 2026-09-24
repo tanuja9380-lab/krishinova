@@ -212,9 +212,8 @@ def crop_analysis(request: CropAnalysisRequest):
             "latitude": None,
             "longitude": None,
 
-            "temperature_c": request.temperature_c,
-
-            "humidity_percent": request.humidity_percent,
+           "temperature_c": request.temperature_c if request.temperature_c is not None else 25.0,
+"humidity_percent": request.humidity_percent if request.humidity_percent is not None else 70.0,
 
             "precipitation_mm": None,
 
