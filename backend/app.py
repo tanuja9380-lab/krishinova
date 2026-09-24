@@ -177,20 +177,37 @@ def crop_analysis(request: CropAnalysisRequest):
     # GET REAL WEATHER
     # ---------------------------------------------------------
 
-    try:
-        weather_data = get_weather(request.location)
+try:
+    weather_data = get_weather(request.location)
+    weather_available = True
 
-    except ValueError as error:
-        raise HTTPException(
-            status_code=404,
-            detail=str(error)
-        )
+except ValueError as error:
+    raise HTTPException(
+        status_code=404,
+        detail=str(error)
+    )
 
-    except Exception as error:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Unable to retrieve weather data: {str(error)}"
+except Exception:
+    weather_available = False
+
+    # Use farmer-provided weather values if available.
+    # Otherwise continue analysis without live weather.
+    weather_data = {
+        "location": request.location,
+        "country": None,
+        "latitude": None,
+        "longitude": None,
+        "temperature_c": request.temperature_c,
+        "humidity_percent": request.humidity_percent,
+        "precipitation_mm": None,
+        "rain_mm": None,
+        "rain_probability_percent": None,
+        "rainfall_expected": (
+            request.rainfall_expected
+            if request.rainfall_expected is not None
+            else False
         )
+    }
 
     # ---------------------------------------------------------
     # USE REAL WEATHER VALUES
